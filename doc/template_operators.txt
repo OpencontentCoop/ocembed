@@ -1,0 +1,19 @@
+
+Opencontent Embed Template operators
+
+== autoembed( string $separator, hash $parameters ) ==
+Print the html value of oEmbed response
+Variables is not required
+The default separator: "<br />"
+
+Example:
+{"http://www.slideshare.net/gabricocek/ez-publish-for-magazine"|autoembed()}
+
+
+== get_oembed_object( string $url, hash $parameters ) ==
+Return the oEmbed response
+$url is required
+
+Example:
+{def $test = get_oembed_object("http://www.slideshare.net/gabricocek/ez-publish-for-magazine")}
+{$test|attribute(show,2)}

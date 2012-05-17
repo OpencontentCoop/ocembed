@@ -56,7 +56,8 @@ class OCEmbed
 
 	function autoembed( $content, $separator = "\n", $args = array(), $search = false )
     {
-        $this->separator = $separator;
+        $this->links = array();
+		$this->separator = $separator;
         $this->args = $args;
                 
         //http://regexadvice.com/forums/thread/48395.aspx
@@ -82,12 +83,10 @@ class OCEmbed
             {
                 $this->links[$m['href']] = $m;
                 $links[] = $m['href'];
-                $content = str_replace( $m[0], $this->autoembed_callback( array( $m['href'] ) ), $content );
             }
         }
 		
 		unset( $matches );
-		
 		$pattern = "/\b(?:(?:https?|ftp):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*[-a-z0-9+&@#\/%=~_|]/i";
         preg_match_all( $pattern, $content, $matches );
 		
@@ -99,8 +98,19 @@ class OCEmbed
 				{
 					$this->links[$m] = $m;
 					$links[] = $m;
-					$content = str_replace( $m, $this->autoembed_callback( array( $m ) ), $content );
 				}
+			}
+		}
+		
+		foreach( $this->links as $m )
+		{
+			if ( is_array( $m ) )
+			{
+				$content = str_replace( $m[0], $this->autoembed_callback( array( $m['href'] ) ), $content );
+			}
+			else
+			{
+				$content = str_replace( $m, $this->autoembed_callback( array( $m ) ), $content );
 			}
 		}
 		
@@ -115,9 +125,13 @@ class OCEmbed
 
 	function autoembed_callback( $match )
     {
-		$return = $this->run( $match[0], $this->args );		
+		$return = $this->run( $match[0], $this->args );
+		
         if ( is_array( $return ) )
+		{
             return $return[0];
+		}
+		
 		if ( is_array( $this->separator ) )
         {
             $open = $this->separator[0];
@@ -136,7 +150,21 @@ class OCEmbed
 	 */
 	function maybe_make_link( $url )
     {	
-		$output = ( array_key_exists( $url, $this->links ) ) ? $this->links[$url][0] : $url;
+		if ( array_key_exists( $url, $this->links ) )
+		{
+			if ( is_array( $this->links[$url] ) )
+			{
+				$output = $this->links[$url][0];
+			}
+			else
+			{
+				$output = $this->links[$url];
+			}
+		}
+		else
+		{
+			$output = $url; 
+		}
 		return $output;
 	}
     

@@ -4,7 +4,7 @@ class googlevideohandler implements OCCustomEmbedHandlerInterface
 {
     static public function regex()
     {
-        return '#http://video\.google\.([A-Za-z.]{2,5})/videoplay\?docid=([\d-]+)(.*?)#i';
+        return '#https?://video\.google\.([A-Za-z.]{2,5})/videoplay\?docid=([\d-]+)(.*?)#i';
     }
     
     static public function callback( $matches, $url, $args )

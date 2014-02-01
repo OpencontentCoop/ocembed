@@ -24,6 +24,8 @@ class OCoEmbed
 
 	function get_html( $url, $args = '', $asArray = false )
     {
+        eZDebug::createAccumulator( 'get_html ' . $url, 'OCoembed', $url ); 
+        eZDebug::accumulatorStart( 'get_html ' . $url, 'OCoembed', $url, false );  
         $provider = false;
 
 		if ( !isset($args['discover']) )
@@ -47,19 +49,29 @@ class OCoEmbed
 			$provider = $this->discover( $url );
 
 		if ( !$provider || false === $data = $this->fetch( $provider, $url, $args ) )
+        {
+            eZDebug::accumulatorStop( 'get_html ' . $url, false );
 			return false;
+        }
         
         if ( $asArray )
+        {
+            eZDebug::accumulatorStop( 'get_html ' . $url, false );
             return get_object_vars($data);
-        
+        }
+        eZDebug::accumulatorStop( 'get_html ' . $url, false );
         return $this->data2html( $data, $url );;
 	}
 
 	function discover( $url )
-    {
-		$providers = array();        
+    {		                
+        $providers = array();
 		// Fetch URL content
-		if ( $html = eZHTTPTool::getDataByUrl( $url ) )
+		if ( !self::getDataByUrl( $url, true ) )
+        {                        
+            return $providers;
+        }
+        if ( $html = self::getDataByUrl( $url ) )
         {
 
 			// <link> types that contain oEmbed provider URLs
@@ -99,8 +111,8 @@ class OCoEmbed
 				}
 			}
 		}        
-
-		// JSON is preferred to XML
+        
+        // JSON is preferred to XML
 		if ( !empty($providers['json']) )
 			return $providers['json'];
 		elseif ( !empty($providers['xml']) )
@@ -128,10 +140,16 @@ class OCoEmbed
 	function _fetch_with_format( $provider_url_with_args, $format )
     {
         $provider_url_with_args = $this->_add_query_arg( 'format', $format, $provider_url_with_args );		
-        $response = eZHTTPTool::getDataByUrl( $provider_url_with_args );
+        if ( !self::getDataByUrl( $provider_url_with_args, true ) )
+        {            
+            return false;
+        }
+        
+        $response = self::getDataByUrl( $provider_url_with_args );
         
         //eZDebug::writeNotice( $provider_url_with_args, __METHOD__ );
-		
+		        
+        
         if ( !$response )            
 			return false;
 		$parse_method = "_parse_$format";        
@@ -311,6 +329,112 @@ class OCoEmbed
             $atts = ltrim($text);
         }
         return $atts;
+    }
+    
+    static function getDataByURL( $url, $justCheckURL = false, $userAgent = false )
+    {
+        // First try CURL
+        if ( extension_loaded( 'curl' ) )
+        {
+            $ch = curl_init( $url );
+            // Options used to perform in a similar way than PHP's fopen()
+            curl_setopt_array(
+                $ch,
+                array(
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_SSL_VERIFYPEER => false
+                )
+            );
+            if ( $justCheckURL )
+            {
+                curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 1 );
+                curl_setopt( $ch, CURLOPT_TIMEOUT, 1 );
+                curl_setopt( $ch, CURLOPT_FAILONERROR, 1 );
+                curl_setopt( $ch, CURLOPT_NOBODY, 1 );
+            }
+            else
+            {
+                curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 1 );
+                curl_setopt( $ch, CURLOPT_TIMEOUT, 1 );
+            }
+
+            if ( $userAgent )
+            {
+                curl_setopt( $ch, CURLOPT_USERAGENT, $userAgent );
+            }
+
+            $ini = eZINI::instance();
+            $proxy = $ini->hasVariable( 'ProxySettings', 'ProxyServer' ) ? $ini->variable( 'ProxySettings', 'ProxyServer' ) : false;
+            // If we should use proxy
+            if ( $proxy )
+            {
+                curl_setopt ( $ch, CURLOPT_PROXY , $proxy );
+                $userName = $ini->hasVariable( 'ProxySettings', 'User' ) ? $ini->variable( 'ProxySettings', 'User' ) : false;
+                $password = $ini->hasVariable( 'ProxySettings', 'Password' ) ? $ini->variable( 'ProxySettings', 'Password' ) : false;
+                if ( $userName )
+                {
+                    curl_setopt ( $ch, CURLOPT_PROXYUSERPWD, "$userName:$password" );
+                }
+            }
+            // If we should check url without downloading data from it.
+            if ( $justCheckURL )
+            {
+                if ( !curl_exec( $ch ) )
+                {
+                    curl_close( $ch );
+                    return false;
+                }
+
+                curl_close( $ch );
+                return true;
+            }
+            // Getting data
+            ob_start();
+            if ( !curl_exec( $ch ) )
+            {
+                curl_close( $ch );
+                ob_end_clean();
+                return false;
+            }
+
+            curl_close ( $ch );
+            $data = ob_get_contents();
+            ob_end_clean();
+
+            return $data;
+        }
+
+        if ( $userAgent )
+        {
+            ini_set( 'user_agent', $userAgent );
+        }
+
+        // Open and read url
+        $fid = fopen( $url, 'r' );
+        if ( $fid === false )
+        {
+            return false;
+        }
+
+        if ( $justCheckURL )
+        {
+            if ( $fid )
+                fclose( $fid );
+
+            return $fid;
+        }
+
+        $data = "";
+        do
+        {
+            $dataBody = fread( $fid, 8192 );
+            if ( strlen( $dataBody ) == 0 )
+                break;
+            $data .= $dataBody;
+        } while( true );
+
+        fclose( $fid );
+        return $data;
     }
 
 }

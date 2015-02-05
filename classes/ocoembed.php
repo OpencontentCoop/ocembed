@@ -147,8 +147,7 @@ class OCoEmbed
         
         $response = self::getDataByUrl( $provider_url_with_args );
         
-        //eZDebug::writeNotice( $provider_url_with_args, __METHOD__ );
-		        
+        eZDebugSetting::writeNotice( 'ocembed', $provider_url_with_args, __METHOD__ );
         
         if ( !$response )            
 			return false;

@@ -33,7 +33,7 @@ class OCEmbed
                     if ( preg_match( $regex, $url, $matches )  )
                     {
                         if ( false !== $result = call_user_func( array( $handler, 'callback' ), $matches, $url, $args ) ){
-                            eZDebug::writeNotice( 'Autoembed has found url "' . $url . '" in ' . $handler, __METHOD__ );	
+                            eZDebugSetting::writeNotice( 'ocembed', 'Autoembed has found url "' . $url . '" in ' . $handler, __METHOD__ );	
                             return $result;
                         }
                     }
@@ -45,12 +45,12 @@ class OCEmbed
         $result = $oembed->get_html( $url, $args );
         if ( $result )
         {
-            eZDebug::writeNotice( 'Autoembed has found url "' . $url . '" in a OEmbed provider', __METHOD__ );	
+            eZDebugSetting::writeNotice( 'ocembed', 'Autoembed has found url "' . $url . '" in a OEmbed provider', __METHOD__ );	
             return $result;
         }
 
 		// Still unknown
-        eZDebug::writeNotice( 'Autoembed did not find url "' . $url . '"', __METHOD__ );	
+        eZDebugSetting::writeNotice( 'ocembed', 'Autoembed did not find url "' . $url . '"', __METHOD__ );	
 		return array( $this->maybe_make_link( $url ) );
 	}
 

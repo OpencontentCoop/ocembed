@@ -46,6 +46,10 @@ class OCEmbed
         if ( $result )
         {
             eZDebugSetting::writeNotice( 'ocembed', 'Autoembed has found url "' . $url . '" in a OEmbed provider', __METHOD__ );	
+            if ( !eZINI::instance( 'ocembed.ini' )->hasVariable( 'Settings', 'DisableFixHttps' ) )
+            {
+                $result = str_replace( 'http://', '//', $result );   
+            }            
             return $result;
         }
 

@@ -34,6 +34,7 @@ Enable the extension; clear all caches
 * Wordpress.tv
 * YouTube
 * Google Video
+* Twitter
 
 You can add your own handler by creating a php class which implements oEmbedProviderInterface and adding a oEmbedProviders[] in ocembed.ini.
 

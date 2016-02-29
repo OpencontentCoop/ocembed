@@ -105,3 +105,7 @@ Example:
 
 The $test variable contains an associative array of oembed response object.
 
+### Cache data
+
+If ```ocembed.ini [OCEmbedSettings] Cache``` is enabled, all ocembed results are stored in ezsite_data table under the key 'oembed_cached_data'.
+To clear that cache, you can run ```php extension/ocembed/bin/php/clear_cache_data.php -s<siteaccess>```

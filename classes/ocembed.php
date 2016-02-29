@@ -6,20 +6,36 @@ class OCEmbed
     public $separator;
     public $args = array();
     public $links = array();
+
+    protected static $cachedData;
     
 	function __construct()
     {
 		$ini = eZINI::instance( 'ocembed.ini' );
-        $this->embed_defaults = $ini->variable( 'OCEmbedSettings', 'EmbedDefaults' );
+        $this->embed_defaults = (array)$ini->variable( 'OCEmbedSettings', 'EmbedDefaults' );
         $this->handlers = $ini->variable( 'OCEmbedSettings', 'CustomEmbedHandlers' );
+
+        $data = eZSiteData::fetchByName( 'oembed_cached_data');
+        if ( !$data instanceof eZSiteData ){
+            $emptyData = json_encode(array());
+            eZDB::instance()->query( "INSERT INTO ezsite_data ( name, value ) values( 'oembed_cached_data',  '$emptyData' )" );
+            $data = eZSiteData::fetchByName( 'oembed_cached_data');
+        }
+        if ( $data instanceof eZSiteData ){
+            self::$cachedData = $data;
+        }
 	}
 
 
 	function run( $url = '', $args = array() )
     {
-        
+        $cacheKey = $this->getCacheKey($url, $args);
 		if ( empty($url) )
 			return '';
+
+        $cacheData = $this->getCachedData($cacheKey);
+        if ($cacheData)
+            return $cacheData;
 
 		$args = array_merge( $this->embed_defaults, $args );
 
@@ -34,6 +50,7 @@ class OCEmbed
                     {
                         if ( false !== $result = call_user_func( array( $handler, 'callback' ), $matches, $url, $args ) ){
                             eZDebugSetting::writeNotice( 'ocembed', 'Autoembed has found url "' . $url . '" in ' . $handler, __METHOD__ );	
+                            $this->setCachedData($cacheKey,$result);
                             return $result;
                         }
                     }
@@ -49,13 +66,68 @@ class OCEmbed
             if ( !eZINI::instance( 'ocembed.ini' )->hasVariable( 'Settings', 'DisableFixHttps' ) )
             {
                 $result = str_replace( 'http://', '//', $result );   
-            }            
+            }
+            $this->setCachedData($cacheKey,$result);
             return $result;
         }
 
 		// Still unknown
         eZDebugSetting::writeNotice( 'ocembed', 'Autoembed did not find url "' . $url . '"', __METHOD__ );	
 		return array( $this->maybe_make_link( $url ) );
+	}
+
+    protected static function isCacheEnabled()
+    {
+        if ( eZINI::instance( 'ocembed.ini' )->hasVariable('OCEmbedSettings', 'Cache') ){
+            return eZINI::instance( 'ocembed.ini' )->variable('OCEmbedSettings', 'Cache') == 'enabled';
+        }
+        return false;
+    }
+
+
+    protected function getCacheKey($url, $args)
+    {
+        $url = rtrim( $url, '/' );
+        ksort($args);
+        $argString = json_encode($args);
+        return md5( $url . $argString );
+    }
+
+	protected function getCachedData( $cacheKey )
+	{
+        if ( self::isCacheEnabled() && self::$cachedData instanceof eZSiteData ){
+            $cachedData = json_decode( self::$cachedData->attribute( 'value' ), 1);
+            if ( isset( $cachedData[$cacheKey] ) )
+            {
+                eZDebugSetting::writeNotice(
+                    'ocembed',
+                    'Autoembed found url in a OEmbed cache',
+                    __METHOD__
+                );
+
+                return $cachedData[$cacheKey];
+            }
+        }
+        return null;
+	}
+
+    public static function clearCachedData()
+    {
+        $data = eZSiteData::fetchByName( 'oembed_cached_data');
+        if ( $data instanceof eZSiteData ){
+            $emptyData = json_encode(array());
+            $data->setAttribute( 'value', $emptyData );
+            $data->store();
+        }
+    }
+
+	protected function setCachedData( $cacheKey, $data ){
+        if ( self::isCacheEnabled() && self::$cachedData instanceof eZSiteData ){
+            $cachedData = json_decode( self::$cachedData->attribute( 'value' ), 1);
+            $cachedData[$cacheKey] = $data;
+            self::$cachedData->setAttribute( 'value', json_encode($cachedData) );
+            self::$cachedData->store();
+        }
 	}
 
 	function autoembed( $content, $separator = "\n", $args = array(), $search = false )

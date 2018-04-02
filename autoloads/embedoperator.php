@@ -8,7 +8,7 @@ class OCEmbedOperator
     
     public static $filters = array();
     
-    function OCEmbedOperator()
+    function __construct()
     {
         $this->Operators= array( 'autoembed', 'get_oembed_object', 'search_embed' );
         $this->embed = new OCEmbed;

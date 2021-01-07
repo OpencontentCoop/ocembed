@@ -332,6 +332,8 @@ class OCoEmbed
     
     static function getDataByURL( $url, $justCheckURL = false, $userAgent = false )
     {
+        $justCheckURL = false; //workaround per 404 su youtube
+
         // First try CURL
         if ( extension_loaded( 'curl' ) )
         {

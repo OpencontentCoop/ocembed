@@ -97,7 +97,7 @@ class OCEmbed
 
         if (is_array($return)){
             $oembed = new OCoEmbed;
-            $return = $oembed->data2html($return, $match[0], true);
+            $return = $oembed->data2html((object)$return, $match[0], true);
         }
 
         if (is_array($this->separator)) {

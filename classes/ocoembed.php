@@ -73,7 +73,10 @@ class OCoEmbed
             }
             // youtube preview resolution workaround
             if (isset($data->thumbnail_url) && $data->type == 'video' && $data->provider_name == 'YouTube'){
-                $data->thumbnail_url = str_replace('hqdefault', 'maxresdefault', $data->thumbnail_url);
+                $maxResThumb = str_replace('hqdefault', 'maxresdefault', $data->thumbnail_url);
+                if (eZHTTPTool::getDataByURL($maxResThumb, true)) {
+                    $data->thumbnail_url = $maxResThumb;
+                }
             }
 
             return $data;

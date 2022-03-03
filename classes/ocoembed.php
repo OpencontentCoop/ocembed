@@ -34,7 +34,7 @@ class OCoEmbed
                 $args['discover'] = false;
 
             foreach ($this->providers as $matchmask => $data) {
-                [$providerurl, $regex] = $data;
+                list($providerurl, $regex) = $data;
 
                 // Turn the asterisk-type provider URLs into regex
                 if (!$regex)

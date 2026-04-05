@@ -17,6 +17,7 @@ class OCoEmbed
                 }
             }
         }
+        // @phpstan-ignore property.notFound
         $this->embed_defaults = $ini->variable('OCEmbedSettings', 'EmbedDefaults');
     }
 
@@ -257,6 +258,7 @@ class OCoEmbed
 
     function fetch($provider, $url, $args = '')
     {
+        // @phpstan-ignore property.notFound
         $args = array_merge($this->embed_defaults, $args);
 
         $provider = $this->_add_query_arg('maxwidth', $args['width'], $provider);

@@ -11,6 +11,7 @@ class googlevideohandler implements OCCustomEmbedHandlerInterface
     {        
     	extract($args);
 	
+     // @phpstan-ignore variable.undefined
     	return '<embed type="application/x-shockwave-flash" src="http://video.google.com/googleplayer.swf?docid=' . $matches[2] . '&amp;hl=en&amp;fs=true" style="width:' . $width . 'px;height:' . $height . 'px" allowFullScreen="true" allowScriptAccess="always"></embed>';
     }
 }

@@ -13,7 +13,6 @@ class OCEmbed
     function __construct()
     {
         $ini = eZINI::instance('ocembed.ini');
-        // @phpstan-ignore property.notFound
         $this->embed_defaults = (array)$ini->variable('OCEmbedSettings', 'EmbedDefaults');
         $this->handlers = $ini->variable('OCEmbedSettings', 'CustomEmbedHandlers');
     }
@@ -119,7 +118,6 @@ class OCEmbed
         if ($cacheData)
             return $cacheData;
 
-        // @phpstan-ignore property.notFound
         $args = array_merge($this->embed_defaults, $args);
 
         foreach ($this->handlers as $handler) {
